@@ -1,47 +1,35 @@
-use axum::{extract::Form, response::Html, routing::get, Router};
+mod axum_htmx;
+
+use axum::{
+    response::{Html, IntoResponse},
+    routing::{get, post},
+    Router,
+};
+use axum_htmx::{HtmxPostRequest, HtmxResponse};
 use serde::Deserialize;
+use silkenweb::prelude::{html::div, ParentElement};
+
+async fn index() -> impl IntoResponse {
+    Html(include_str!("../index.html"))
+}
+
+#[derive(Deserialize)]
+struct Name {
+    first: String,
+    last: String,
+}
+
+async fn form_submit(
+    HtmxPostRequest(Name { first, last }): HtmxPostRequest<Name>,
+) -> impl IntoResponse {
+    HtmxResponse::new(div().text(format!("Hello, {} {}!", first, last)))
+}
 
 #[shuttle_runtime::main]
 async fn axum() -> shuttle_axum::ShuttleAxum {
-    // build our application with some routes
-    let app = Router::new().route("/", get(show_form).post(accept_form));
+    let app = Router::new()
+        .route("/", get(index))
+        .route("/form-submit", post(form_submit));
 
     Ok(app.into())
-}
-
-async fn show_form() -> Html<&'static str> {
-    Html(
-        r#"
-        <!doctype html>
-        <html>
-            <head></head>
-            <body>
-                <form action="/" method="post">
-                    <label for="name">
-                        Enter your name:
-                        <input type="text" name="name">
-                    </label>
-
-                    <label>
-                        Enter your email:
-                        <input type="text" name="email">
-                    </label>
-
-                    <input type="submit" value="Subscribe!">
-                </form>
-            </body>
-        </html>
-        "#,
-    )
-}
-
-#[derive(Deserialize, Debug)]
-#[allow(dead_code)]
-struct Input {
-    name: String,
-    email: String,
-}
-
-async fn accept_form(Form(input): Form<Input>) {
-    dbg!(&input);
 }
