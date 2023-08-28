@@ -11,13 +11,21 @@
   </head>
 
   <body>
-    <form hx-post="/form-submit" hx-target="#form-response">
-      <label for="first">First name:</label>
-      <input type="text" id="first" name="first" /><br /><br />
-      <label for="last">Last name:</label>
-      <input type="text" id="last" name="last" />
+    <form hx-post="/rating" hx-target="#rating-response">
+      <div id="rating-response"></div>
+      <label>
+        <input type="radio" name="rating" value="Good" />
+        Good
+      </label>
+      <label>
+        <input type="radio" name="rating" value="TooSoon" />
+        Too Soon
+      </label>
+      <label>
+        <input type="radio" name="rating" value="Bad" />
+        Bad
+      </label>
       <button type="submit">Submit</button>
     </form>
-    <div id="form-response"></div>
   </body>
 </html>
