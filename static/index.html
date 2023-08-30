@@ -12,7 +12,12 @@
 
   <body>
     <form hx-post="/rating" hx-target="#rating-response">
-      <div id="rating-response"></div>
+      <div
+        id="rating-response"
+        hx-get="/load"
+        hx-trigger="load"
+        hx-target="this"
+      ></div>
       <label>
         <input type="radio" name="rating" value="Good" />
         Good

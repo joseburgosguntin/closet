@@ -1,15 +1,17 @@
 mod axum_htmx;
 
+use askama::Template;
 use axum::{
     extract::State,
     response::{Html, IntoResponse},
-    routing::{get, post},
-    Router,
+    routing::post,
 };
+use axum::{handler::HandlerWithoutStateExt, http::StatusCode, routing::get, Router};
 use axum_htmx::HtmxPostRequest;
 use serde::Deserialize;
 use sqlx::{FromRow, PgPool};
-use std::sync::Arc;
+use std::{fmt::Display, path::PathBuf, sync::Arc};
+use tower_http::services::ServeDir;
 use uuid::Uuid;
 
 #[derive(Deserialize, Debug, PartialEq)]
@@ -19,10 +21,19 @@ enum Rating {
     Bad,
 }
 
-#[derive(Deserialize, Debug)]
+impl Display for Rating {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Deserialize, Debug, Template)]
+#[template(path = "combo.html")]
 struct RatedCombo {
     rating: Rating,
-    combo: WeightedCombo,
+    shirt_id: i64,
+    short_id: i64,
+    weight: f64,
 }
 
 #[derive(Debug, Clone, Deserialize, FromRow)]
@@ -113,80 +124,56 @@ async fn combo(pool: Arc<PgPool>) -> sqlx::Result<SvgWithId> {
     todo!()
 }
 
+async fn rating(
+    State(pool): State<Arc<PgPool>>,
+    HtmxPostRequest(rated): HtmxPostRequest<RatedCombo>,
+) -> impl IntoResponse {
+    let combo = combo(pool);
+    Html(rated.render().unwrap())
+    // Html(format!(
+    //     r#"
+    //     <h1> rating {rated:?} </h1>
+    //     <input name="shirt_id" type="hidden" value="2"/>
+    //     <input name="short_id" type="hidden" value="2"/>
+    //     <input name="weight" type="hidden" value="1.0"/>
+    //     "#,
+    // ))
+}
+
 async fn load(State(pool): State<Arc<PgPool>>) -> impl IntoResponse {
-    let combo = combo(pool).await;
-    todo!()
-}
-
-// async fn rating(
-//     State(pool): State<Arc<PgPool>>,
-//     rated: HtmxPostRequest<Option<RatedCombo>>,
-// ) -> impl IntoResponse {
-//     // 0. user_id and days
-//     let (user_id, days) = user_id_and_days().await;
-//     // 1. `spawn` shorts
-//     let shorts_pool = Arc::clone(&pool);
-//     let shorts =
-//         tokio::spawn(async move { clothes(shorts_pool.as_ref(), "shorts", user_id, days).await });
-//     // 2. `await` shirts
-//     let Ok(shirts) = clothes(pool.as_ref(), "shirts", user_id, days).await else {
-//         todo!()
-//     };
-//
-//     // 3. `await` shirt
-//     let Ok(shirt) = shirt(pool.as_ref(), shirts).await else {
-//         todo!()
-//     };
-//
-//     // 4. `await` combos
-//     let Ok(combos) = combos(pool.as_ref(), shirt.id).await else {
-//         todo!()
-//     };
-//
-//     // 5. `await` shorts `await` short
-//     let Ok(shorts) = shorts.await else {
-//         todo!()
-//     };
-//     todo!()
-// }
-
-async fn index() -> impl IntoResponse {
-    Html(include_str!("../index.html"))
-}
-
-async fn all_combos(pool: &PgPool) -> Vec<WeightedCombo> {
-    sqlx::query_as(
+    let combo = combo(pool);
+    Html(
         r#"
-            SELECT shirt_id, short_id, weight FROM combos
-            "#,
+        <h1> load </h1>
+        <input name="shirt_id" type="hidden" value="2"/>
+        <input name="short_id" type="hidden" value="2"/>
+        <input name="weight" type="hidden" value="1.0"/>
+        "#,
     )
-    .fetch_all(pool)
-    .await
-    .unwrap()
-}
-
-async fn all_combos_handler(State(pool): State<Arc<PgPool>>) -> impl IntoResponse {
-    let mut string = String::with_capacity(100);
-    for combo in all_combos(pool.as_ref()).await {
-        string.push_str(&format!("{combo:?}"))
-    }
-    string
 }
 
 #[shuttle_runtime::main]
 async fn axum(
     #[shuttle_secrets::Secrets] secret_store: shuttle_secrets::SecretStore,
+    #[shuttle_static_folder::StaticFolder] static_folder: PathBuf,
 ) -> shuttle_axum::ShuttleAxum {
     let pool = PgPool::connect(&secret_store.get("DB_URL").expect("url"))
         .await
-        .expect("sad postgres");
+        .map_err(|e| shuttle_runtime::Error::Database(e.to_string()))?;
+
+    async fn handle_404() -> (StatusCode, &'static str) {
+        (StatusCode::NOT_FOUND, "Not found")
+    }
+
+    let service = handle_404.into_service();
+
+    let serve_dir = ServeDir::new(static_folder).not_found_service(service);
 
     let app = Router::new()
-        .route("/", get(index))
         .route("/load", get(load))
-        // .route("/rating", post(rating))
-        .route("/all_combos", get(all_combos_handler))
-        .with_state(Arc::new(pool));
+        .route("/rating", post(rating))
+        .with_state(Arc::new(pool))
+        .fallback_service(serve_dir);
 
     Ok(app.into())
 }
