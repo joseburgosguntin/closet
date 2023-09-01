@@ -470,6 +470,7 @@ dependencies = [
  "shuttle-static-folder",
  "silkenweb",
  "sqlx",
+ "thiserror",
  "tokio",
  "tower",
  "tower-http",

@@ -1,4 +1,30 @@
-<h1>rating {{rating}}</h1>
-<input name="shirt_id" type="hidden" value="{{shirt_id}}" />
-<input name="short_id" type="hidden" value="{{short_id}}" />
-<input name="weight" type="hidden" value="{{weight}}" />
+<svg
+  width="150"
+  height="150"
+  viewBox="0 0 20 20"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <rect width="20" height="20" fill="#00000000" />
+  <path
+    d="M4.5 18H9H11H15.5V8L16.5 9L19 5.5L15.5 2L13 1L10 2L7 1L4.5 2L1 5.5L3.5 9L4.5 8V18Z"
+    fill="{{"#{:08x}"|format(shirt_color)}}"
+    stroke="#000000FF"
+  />
+</svg>
+<svg
+  width="150"
+  height="150"
+  viewBox="0 0 20 20"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <rect width="20" height="20" fill="#00000000" />
+  <path
+    d="M15.5 4H4.5L2 17L9 19L10 13L11 19L18 17L15.5 4Z"
+    fill="{{"#{:08x}"|format(short_color)}}" 
+    stroke="#000000FF"
+  />
+</svg>
+<input name="shirt_color" type="hidden" value="{{shirt_color}}" />
+<input name="short_color" type="hidden" value="{{short_color}}" />
