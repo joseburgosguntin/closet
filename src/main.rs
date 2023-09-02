@@ -1,11 +1,8 @@
-mod axum_htmx;
-
 use askama::Template;
 use axum::{
     extract::State,
     response::{Html, IntoResponse, Redirect},
     routing::post,
-    Json,
 };
 use axum::{handler::HandlerWithoutStateExt, http::StatusCode, routing::get, Router};
 use axum_htmx::HtmxPostRequest;

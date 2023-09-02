@@ -7,6 +7,7 @@ edition = "2021"
 askama = "0.12.0"
 async-trait = "0.1.73"
 axum = "0.6.18"
+axum-htmx = { git = "https://github.com/joseburgosguntin/axum-htmx" }
 rand = "0.8.5"
 serde = { version = "1.0", features=["derive"]}
 serde_urlencoded = "0.7.1"
@@ -14,7 +15,6 @@ shuttle-axum = "0.25.0"
 shuttle-runtime = "0.25.0"
 shuttle-secrets = "0.25.0"
 shuttle-static-folder = "0.25.0"
-silkenweb = "0.5.0"
 sqlx = { version = "0.7.1", features = ["postgres", "runtime-tokio", "uuid"]}
 thiserror = "1.0.47"
 tokio = "1.28.2"
